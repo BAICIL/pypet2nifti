@@ -16,6 +16,7 @@ setup(
         'pydicom',
         'nibabel'
         'dcm2niix'
+        'scipy'
     ],
 
     # Entry point configuration
