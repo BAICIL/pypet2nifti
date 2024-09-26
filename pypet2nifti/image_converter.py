@@ -410,7 +410,7 @@ class Converter:
         sidecar_template_custom['SliceThickness'] = float(self.header[0].get('SliceThickness', None))
         sidecar_template_custom['ImageOrientationPatientDICOM'] = list(self.header[0].get('ImageOrientationPatient', []))
         sidecar_template_custom['ConversionSoftwareVersion'] = 'v1.0.20220505'
-        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.0.1'
+        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.1'
         if self.apply_filter:
             sidecar_template_custom['Smoothed'] = 'yes'
             sidecar_template_custom['FilterSize'] = self.filter_size
@@ -451,7 +451,7 @@ class Converter:
         sidecar_template_custom['SliceThickness'] = (self.subheaders[0].get('z_pixel_size', None)) * 10
         sidecar_template_custom['ImageOrientationPatientDICOM'] = []
         sidecar_template_custom['ConversionSoftwareVersion'] = 'v1.0.20220505'
-        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.0.1'
+        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.1'
         if self.apply_filter:
             sidecar_template_custom['Smoothed'] = 'yes'
             sidecar_template_custom['FilterSize'] = self.filter_size
