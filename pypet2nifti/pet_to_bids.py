@@ -1,5 +1,5 @@
 import argparse
-from image_converter import Converter  # Assuming the Converter class is in a file named image_converter.py
+from image_converter import Converter  
 
 def main():
     """
@@ -7,7 +7,7 @@ def main():
 
     Uses argparse to capture command-line inputs and initialize the Converter class with the provided arguments.
     """
-    parser = argparse.ArgumentParser(description="Convert DICOM or ECAT images to NIfTI format.")
+    parser = argparse.ArgumentParser(description="Convert DICOM or ECAT images to NIfTI format with sidecar json file.")
     parser.add_argument('--source_data', type=str, help='Path to the source DICOM or ECAT data.')
     parser.add_argument('--destination_folder', type=str, help='Destination folder for the converted NIfTI file.')
     parser.add_argument('--subject_id', type=str, default=None, help='Subject ID for the output file naming.')
@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--run_id', type=str, default=None, help='Run ID for the output file naming.')
     parser.add_argument('--apply_filter', action='store_true', help='Apply filter during conversion if needed.')
     parser.add_argument('--scanner_type', type=str, default=None, help='Type of scanner used (if applicable).')
+    parser.add_argument('--filter_size', type=float, default=[], help='specify the 3 float values for the filter size in 3 dimensions.')
 
     args = parser.parse_args()
 
@@ -26,19 +27,21 @@ def main():
         subject_id=args.subject_id,
         session_id=args.session_id,
         tracer=args.tracer,
-        recon=args.recon,
         run_id=args.run_id,
         apply_filter=args.apply_filter,
-        scanner_type=args.scanner_type
+        scanner_type=args.scanner_type,
+        filter_size=args.filter_size
     )
 
     # Perform the NIfTI conversion
     try:
+        # Convert to nifti image
         print("Starting the conversion process...")
         converter.make_nifti()
         print("NIfTI conversion completed successfully.")
 
         # Generate JSON metadata if applicable
+        print("Generating JSON metadata sidecar file...")
         converter.make_json()
         print("JSON metadata generation completed.")
     except Exception as e:
