@@ -1,6 +1,5 @@
 """
 This is a Class for converting ECAT or Dicom data to nifti format for PET
-"""
 
 __author__ = "Dhruman Goradia"
 __email__ = "dhruman.goradia2@bannerhealth.com"
@@ -8,7 +7,7 @@ __credits__ = ["OpenNeuro Team"]
 __copyright__ = "Banner Alzheimer's Institute"
 __version__ = "0.0.1"
 __license__ = "MIT License"
-
+"""
 import os
 import pathlib
 import pydicom
@@ -17,7 +16,7 @@ import numpy as np
 import subprocess
 from datetime import datetime
 import re
-from petsidecar import sidecar_template_custom
+from .petsidecar import sidecar_template_custom
 import json
 import importlib.resources as pkg_resources
 import pypet2nifti
