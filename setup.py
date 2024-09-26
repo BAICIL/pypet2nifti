@@ -14,8 +14,8 @@ setup(
     # List dependencies (install_requires can also directly list dependencies if requirements.txt is not used)
     install_requires=[
         'pydicom',
-        'nibabel'
-        'dcm2niix'
+        'nibabel',
+        'dcm2niix',
         'scipy'
     ],
 
