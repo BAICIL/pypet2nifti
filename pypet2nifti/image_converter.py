@@ -19,6 +19,9 @@ from datetime import datetime
 import re
 from petsidecar import sidecar_template_custom
 import json
+import importlib.resources as pkg_resources
+import pypet2nifti
+from scipy.ndimage import gaussian_filter
 
 
 class Converter:
@@ -43,8 +46,9 @@ class Converter:
                  session_id: str = None,
                  tracer: str = None,
                  run_id: str = None,
-                 apply_filter = True,
-                 scanner_type = None):
+                 apply_filter = False,
+                 scanner_type = None,
+                 filter_size = []):
         """
         Initializes the Converter class with the provided parameters.
 
@@ -58,6 +62,7 @@ class Converter:
             run_id (str, optional): Run ID for output naming. Defaults to None.
             apply_filter (bool, optional): Apply filter during conversion. Defaults to True.
             scanner_type (str, optional): Type of scanner used. Defaults to None.
+            filter_size (list, optional): Filter size in 3 dimensions. Defaults to [].
         """
         self.source_data = pathlib.Path(source_data)
         self.destination_folder = pathlib.Path(destination_folder)
@@ -67,6 +72,7 @@ class Converter:
         self.run_id = f"_run-{run_id}" if run_id else ''
         self.apply_filter = apply_filter
         self.scanner_type = scanner_type
+        self.filter_size = filter_size
 
         if not self.source_data.exists():
             raise FileNotFoundError(f"Source data error: {self.source_data} does not exist")
@@ -225,7 +231,6 @@ class Converter:
         try:
             ecat_data = nib.ecat.load(self.source_data)
         except nib.filebasedimages.ImageFileError as err:
-            print("\nFailed to load ecat image.\n")
             raise err
         
         header = {}
@@ -247,10 +252,57 @@ class Converter:
             subheaders.append(holder)
         
         return header, subheaders
+    def filter_image(self):
+        """
+        This function filters the image so that the effect smoothing is 8x8x8 mm3. This is done to 
+        harmonize the data across different scanners. 
+
+        Raises:
+            fe: FileNotFound Error
+            ie: ImageFileError from nibabel exceptions.
+            e: Other Exceptions
+            ValueError: Error in input values
+        """
+        file_path = pathlib.Path(self.output_folder) / f"{self.output_file}.nii.gz"
+        try:
+            img = nib.load(file_path)
+            data = img.get_fdata()
+        except FileNotFoundError as fe:
+            raise fe
+        except nib.filebasedimages.ImageFileError as ie:
+            raise ie
+        except Exception as e:
+            raise e    
+        fwhm = np.array(self.filter_size)
+        if np.any(fwhm > 8):
+            raise ValueError("Filter size in any dimensions should not be greater than 8")
+        sigma = fwhm / 2.355
+        voxel_size = np.abs(np.diag(img.affine))[:3]
+        sigma_voxel = sigma / voxel_size
+        try:
+            if data.ndim == 3:
+                smoothed_data = gaussian_filter(data, sigma=sigma_voxel)
+            elif data.ndim == 4:
+                smoothed_data = np.zeros_like(data)
+                for t in range (data.shape[3]):
+                    smoothed_data[:, :, :, t] = gaussian_filter(data[:, :, :, t], sigma=sigma_voxel)
+            else:
+                raise ValueError("Input NIFTI image must be 3D or 4D.")
+        except Exception as e:
+            raise e
+        try:
+            smoothed_img = nib.Nifti1Image(smoothed_data, img.affine, img.header)
+            nib.save(smoothed_img, file_path)
+        except nib.filebasedimages.ImageFileError as ie:
+            raise ie
+        except Exception as e:
+            raise e
 
     def make_nifti(self):
         """
         Converts the DICOM or ECAT data to NIfTI format using dcm2niix.
+        If `apply_filter = True`, applies smoothing with appropriate smoothing kernel 
+        based on the `scanner_type` provided to harmonize the data to 8x8x8 filter.
 
         Raises:
             FileNotFoundError: If the NIfTI output file is not created.
@@ -269,6 +321,21 @@ class Converter:
                 raise FileNotFoundError("Output file not created")
         else:
             raise Exception("ERROR: Something is wrong.\nIf input is not DICOM or ECAT, the program should have errored out before executing this function.")
+        
+        # Apply smoothing
+        if self.apply_filter:
+            if len(self.filter_size) == 3:
+                self.filter_image()
+            elif self.scanner_type is not None:
+                with pkg_resources.open_text(pypet2nifti, 'scanner_filter.json') as f:
+                    scanners = json.load(f)
+                    if self.scanner_type in scanners.keys():
+                        self.filter_size = scanners[self.scanner_type]
+                    else:
+                        raise Exception(f"Error: Not a valid filter type. Scanner should be one of the following:\n{list(scanners.keys())}")
+                self.filter_image()
+            else:
+                raise Exception("Error: Provide scanner type or a valid filter size for apply smoothing")
 
     def make_json(self):
         """
@@ -307,6 +374,12 @@ class Converter:
         return None
 
     def dicom_json(self):
+        """
+        Creates the json sidecar file for DICOM inputs
+
+        Returns:
+            None
+        """
         sidecar_template_custom['Manufacturer'] = self.header[0].get('Manufracturer', None)
         sidecar_template_custom['ManufacturersModelName'] = self.header[0].get('ManufacturerModelName', None)
         sidecar_template_custom['SoftwareVersions'] = self.header[0].get('SoftwareVersions', None)
@@ -339,10 +412,22 @@ class Converter:
         sidecar_template_custom['ImageOrientationPatientDICOM'] = list(self.header[0].get('ImageOrientationPatient', []))
         sidecar_template_custom['ConversionSoftwareVersion'] = 'v1.0.20220505'
         sidecar_template_custom['PyPET2NIFTIVersion'] = '0.0.1'
+        if self.apply_filter:
+            sidecar_template_custom['Smoothed'] = 'yes'
+            sidecar_template_custom['FilterSize'] = self.filter_size
+        else:
+            sidecar_template_custom['Smoothed'] = 'no'
+            sidecar_template_custom['FilterSize'] = []
         self.write_json(sidecar_template_custom)
         return None
 
     def ecat_json(self):
+        """
+        Creates the json sidecar file for ECAT inputs
+
+        Returns:
+            None
+        """
         sidecar_template_custom['ManufacturersModelName'] = self.header.get('system_type', None)
         sidecar_template_custom['SoftwareVersions'] = self.header.get('sw_version', None)
         sidecar_template_custom['SeriesDescription'] = self.header.get('study_description', None)
@@ -368,5 +453,11 @@ class Converter:
         sidecar_template_custom['ImageOrientationPatientDICOM'] = []
         sidecar_template_custom['ConversionSoftwareVersion'] = 'v1.0.20220505'
         sidecar_template_custom['PyPET2NIFTIVersion'] = '0.0.1'
+        if self.apply_filter:
+            sidecar_template_custom['Smoothed'] = 'yes'
+            sidecar_template_custom['FilterSize'] = self.filter_size
+        else:
+            sidecar_template_custom['Smoothed'] = 'no'
+            sidecar_template_custom['FilterSize'] = []
         self.write_json(sidecar_template_custom)
         return None
