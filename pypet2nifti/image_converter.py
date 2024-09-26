@@ -139,7 +139,20 @@ class Converter:
         self.output_folder = pathlib.Path(self.destination_folder) / f'sub-{self.subject_id}' / f'ses-{self.session_id}' / self.tracer
         self.output_folder.mkdir(parents=True, exist_ok=True)
         self.output_file = f'sub-{self.subject_id}_ses-{self.session_id}_tracer-{self.tracer}{self.run_id}_PET'
-
+        if self.apply_filter:
+            if len(self.filter_size) == 3:
+                if np.any(np.array(self.filter_size) > 8):
+                    raise ValueError("Filter size in any dimensions should not be greater than 8")
+            elif self.scanner_type is not None:
+                with pkg_resources.open_text(pypet2nifti, 'scanner_filter.json') as f:
+                    scanners = json.load(f)
+                    if self.scanner_type in scanners.keys():
+                        self.filter_size = scanners[self.scanner_type]
+                    else:
+                        raise Exception(f"Error: Not a valid filter type. Scanner should be one of the following:\n{list(scanners.keys())}")
+            else:
+                raise Exception("Error: Provide scanner type or a valid filter size for apply smoothing")
+            
     @staticmethod
     def check_for_dcm2niix():
         """
@@ -273,8 +286,6 @@ class Converter:
         except Exception as e:
             raise e    
         fwhm = np.array(self.filter_size)
-        if np.any(fwhm > 8):
-            raise ValueError("Filter size in any dimensions should not be greater than 8")
         sigma = fwhm / 2.355
         voxel_size = np.abs(np.diag(img.affine))[:3]
         sigma_voxel = sigma / voxel_size
@@ -323,18 +334,7 @@ class Converter:
         
         # Apply smoothing
         if self.apply_filter:
-            if len(self.filter_size) == 3:
-                self.filter_image()
-            elif self.scanner_type is not None:
-                with pkg_resources.open_text(pypet2nifti, 'scanner_filter.json') as f:
-                    scanners = json.load(f)
-                    if self.scanner_type in scanners.keys():
-                        self.filter_size = scanners[self.scanner_type]
-                    else:
-                        raise Exception(f"Error: Not a valid filter type. Scanner should be one of the following:\n{list(scanners.keys())}")
-                self.filter_image()
-            else:
-                raise Exception("Error: Provide scanner type or a valid filter size for apply smoothing")
+            self.filter_image()
 
     def make_json(self):
         """
