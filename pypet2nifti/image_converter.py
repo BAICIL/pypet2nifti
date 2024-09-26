@@ -149,7 +149,7 @@ class Converter:
                     if self.scanner_type in scanners.keys():
                         self.filter_size = scanners[self.scanner_type]
                     else:
-                        raise Exception(f"Error: Not a valid filter type. Scanner should be one of the following:\n{list(scanners.keys())}")
+                        raise Exception(f"Error: Not a valid scanner type. Scanner should be one of the following:\n{list(scanners.keys())}")
             else:
                 raise Exception("Error: Provide scanner type or a valid filter size for apply smoothing")
             
