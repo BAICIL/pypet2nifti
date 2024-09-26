@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 # Full setup configuration
 setup(
-    name='pupet2nifti',  
+    name='pypet2nifti',  
     version='0.1',  
     description='A tool to convert DICOM and ECAT images to NIfTI format.',  
     author='Dhruman Goradia, PhD', 
