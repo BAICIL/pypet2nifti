@@ -16,7 +16,7 @@ def main():
     parser.add_argument('--run_id', type=str, default=None, help='Run ID for the output file naming.')
     parser.add_argument('--apply_filter', action='store_true', help='Apply filter during conversion if needed.')
     parser.add_argument('--scanner_type', type=str, default=None, help='Type of scanner used (if applicable).')
-    parser.add_argument('--filter_size', type=float, default=[], help='specify the 3 float values for the filter size in 3 dimensions.')
+    parser.add_argument('--filter_size', type=float, nargs=3, default=[], help='specify the 3 float values for the filter size in 3 dimensions.')
 
     args = parser.parse_args()
 
