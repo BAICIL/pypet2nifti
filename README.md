@@ -5,7 +5,9 @@ Converter for PET ECAT/DICOM data to bids format
 
 Clone the github repo:
 
-```git clone https://github.com/BAICIL/pypet2nifti
+```
+git clone https://github.com/BAICIL/pypet2nifti
 cd pypet2nifti
-pip install .```
+pip install .
+```
 
