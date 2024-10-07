@@ -13,12 +13,12 @@ pip install .
 
 # Usage
 
-convert-to-nifti [-h] --source_data SOURCE_DATA --destination_folder <br>
-                        DESTINATION_FOLDER [--subject_id SUBJECT_ID] <br>
-                        [--session_id SESSION_ID] [--tracer TRACER] <br>
-                        [--run_id RUN_ID] [--apply_filter] <br>
-                        [--scanner_type SCANNER_TYPE] <br>
-                        [--filter_size FILTER_SIZE FILTER_SIZE FILTER_SIZE] <br>
+convert-to-nifti [-h] --source_data SOURCE_DATA --destination_folder 
+                        DESTINATION_FOLDER [--subject_id SUBJECT_ID] 
+                        [--session_id SESSION_ID] [--tracer TRACER] 
+                        [--run_id RUN_ID] [--apply_filter] 
+                        [--scanner_type SCANNER_TYPE] 
+                        [--filter_size FILTER_SIZE_X FILTER_SIZE_Y FILTER_SIZE_Z] 
 
 Convert DICOM or ECAT images to NIfTI format with sidecar json file. <br>
 
