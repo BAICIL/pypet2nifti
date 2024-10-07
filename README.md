@@ -13,35 +13,53 @@ pip install .
 
 # Usage
 
-convert-to-nifti [-h] --source_data SOURCE_DATA --destination_folder
-                        DESTINATION_FOLDER [--subject_id SUBJECT_ID]
-                        [--session_id SESSION_ID] [--tracer TRACER]
-                        [--run_id RUN_ID] [--apply_filter]
-                        [--scanner_type SCANNER_TYPE]
-                        [--filter_size FILTER_SIZE FILTER_SIZE FILTER_SIZE]
+convert-to-nifti [-h] --source_data SOURCE_DATA --destination_folder <br>
+                        DESTINATION_FOLDER [--subject_id SUBJECT_ID] <br>
+                        [--session_id SESSION_ID] [--tracer TRACER] <br>
+                        [--run_id RUN_ID] [--apply_filter] <br>
+                        [--scanner_type SCANNER_TYPE] <br>
+                        [--filter_size FILTER_SIZE FILTER_SIZE FILTER_SIZE] <br>
 
-Convert DICOM or ECAT images to NIfTI format with sidecar json file.
+Convert DICOM or ECAT images to NIfTI format with sidecar json file. <br>
 
-options:
-  -h, --help            show this help message and exit
-  --source_data SOURCE_DATA
-                        Path to the source DICOM or ECAT data.
-  --destination_folder DESTINATION_FOLDER
-                        Destination folder for the converted NIfTI file.
-  --subject_id SUBJECT_ID
-                        Subject ID for the output file naming.
-  --session_id SESSION_ID
-                        Session ID for the output file naming.
-  --tracer TRACER       Tracer information for the output file naming.
-  --run_id RUN_ID       Run ID for the output file naming.
-  --apply_filter        Apply filter during conversion if needed.
-  --scanner_type SCANNER_TYPE
-                        Type of scanner used (if applicable).
-  --filter_size FILTER_SIZE FILTER_SIZE FILTER_SIZE
-                        specify the 3 float values for the filter size in 3
-                        dimensions.
+options: <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;-h, --help<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;show this help message and exit<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--source_data SOURCE_DATA<br>    
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Path to the source DICOM or ECAT data.<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--destination_folder DESTINATION_FOLDER<br>     
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Destination folder for the converted NIfTI file.<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--subject_id SUBJECT_ID<br>     
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Subject ID for the output file naming.<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--session_id SESSION_ID<br>     
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Session ID for the output file naming.<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--tracer TRACER<br>       
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tracer information for the output file naming.<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--run_id RUN_ID<br>       
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Run ID for the output file naming.<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--apply_filter<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Apply filter during conversion if needed.<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--scanner_type SCANNER_TYPE<br>     
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Type of scanner used (if applicable).<br>
+  <br>
+  &nbsp;&nbsp;&nbsp;&nbsp;--filter_size FILTER_SIZE_X FILTER_SIZE_Y FILTER_SIZE_Z<br>     
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;specify the 3 float values for the filter size in 3 dimensions.<br>
 
-* NOTE: In case of ECAT data provide the path with the file name. In case of DICOM data provide the path to the folder where DICOM files reside. *
+*NOTE:* 
+* In case of ECAT data provide the path with the file name.
+* In case of DICOM data provide the path to the folder where DICOM files reside.
+* If `--apply_filter` is `True`, then provide arguments for either `--scanner_type` or `--filter_size`.
+* In the pypet2nifti folder there is a `scanner_filter.json` files which provide filter size for some typical scanners.
 
 # Example
 
