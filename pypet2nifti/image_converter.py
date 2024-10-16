@@ -130,7 +130,7 @@ class Converter:
             if self.input_format == 'dicom':
                 self.tracer = re.sub(r'\[.*?\]', '', self.header[0].RadiopharmaceuticalInformationSequence[0].get('Radiopharmaceutical', None)).upper()
             elif self.input_format == 'ecat':
-                self.tracer = self.header.get('radiopharmaceutical', '')
+                self.tracer = self.header.get('radiopharmaceutical', '').replace(" ", "")
             else:
                 self.tracer = ''
         if self.tracer == '':
