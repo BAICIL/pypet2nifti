@@ -20,7 +20,7 @@ from .petsidecar import sidecar_template_custom
 import json
 import importlib.resources as pkg_resources
 import pypet2nifti
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter1d
 
 
 class Converter:
@@ -264,6 +264,20 @@ class Converter:
             subheaders.append(holder)
         
         return header, subheaders
+    
+    @staticmethod
+    def fwhm_to_sigma(fwhm):
+        """
+        Convert Full Width at Half Maximum (FWHM) to standard deviation (sigma).
+
+        Args:
+            fwhm (float): Full Width at Half Maximum value in mm.
+
+        Returns:
+            float: Sigma value.
+        """
+        return fwhm / np.sqrt(8 * np.log(2))
+
     def filter_image(self):
         """
         This function filters the image so that the effect smoothing is 8x8x8 mm3. This is done to 
@@ -286,16 +300,23 @@ class Converter:
         except Exception as e:
             raise e    
         fwhm = np.array(self.filter_size)
-        sigma = fwhm / 2.355
-        voxel_size = np.abs(np.diag(img.affine))[:3]
-        sigma_voxel = sigma / voxel_size
+        voxel_size = img.header.get_zooms()[:3]
+        sigma_x = self.fwhm_to_sigma(fwhm[0]) / voxel_size[0]
+        sigma_y = self.fwhm_to_sigma(fwhm[1]) / voxel_size[1]
+        sigma_z = self.fwhm_to_sigma(fwhm[2]) / voxel_size[2]
+        alpha = 0.02
+        truncate = np.sqrt(-2 * np.log(alpha))
         try:
             if data.ndim == 3:
-                smoothed_data = gaussian_filter(data, sigma=sigma_voxel)
+                smoothed_data = gaussian_filter1d(data, sigma=sigma_x, axis=0, truncate=truncate)
+                smoothed_data = gaussian_filter1d(smoothed_data, sigma=sigma_y, axis=1, truncate=truncate)
+                smoothed_data = gaussian_filter1d(smoothed_data, sigma=sigma_z, axis=2, truncate=truncate)
             elif data.ndim == 4:
                 smoothed_data = np.zeros_like(data)
                 for t in range (data.shape[3]):
-                    smoothed_data[:, :, :, t] = gaussian_filter(data[:, :, :, t], sigma=sigma_voxel)
+                    smoothed_data[..., t] = gaussian_filter1d(data[..., t], sigma=sigma_x, axis=0, truncate=truncate)
+                    smoothed_data[..., t] = gaussian_filter1d(smoothed_data[..., t], sigma=sigma_y, axis=1, truncate=truncate)
+                    smoothed_data[..., t] = gaussian_filter1d(smoothed_data[..., t], sigma=sigma_z, axis=2, truncate=truncate)
             else:
                 raise ValueError("Input NIFTI image must be 3D or 4D.")
         except Exception as e:
