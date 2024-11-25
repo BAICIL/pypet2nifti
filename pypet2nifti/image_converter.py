@@ -278,6 +278,42 @@ class Converter:
         """
         return fwhm / np.sqrt(8 * np.log(2))
 
+    def reset_origin(self):
+        """
+        This function reset's the origin to the center of the FOV. 
+
+        Raises:
+            fe: FileNotFound Error
+            ie: ImageFileError from nibabel exceptions.
+            e: Other Exceptions
+            ValueError: Error in input values
+        """
+        file_path = pathlib.Path(self.output_folder) / f"{self.output_file}.nii.gz"
+        try:
+            img = nib.load(file_path)
+        except FileNotFoundError as fe:
+            raise fe
+        except nib.filebasedimages.ImageFileError as ie:
+            raise ie
+        except Exception as e:
+            raise e    
+        try:
+            data_shape = img.shape
+            affine = img.affine
+            center_voxel = np.array(data_shape[:3]) / 2
+            center_mm = nib.affines.apply_affine(affine, center_voxel)
+            new_affine = affine.copy
+            new_affine[:3, 3] -= center_mm
+        except Exception as e:
+            raise e
+        try:
+            reori_img = nib.Nifti1Image(img.get_fdata(), new_affine)
+            nib.save(reori_img, file_path)
+        except nib.filebasedimages.ImageFileError as ie:
+            raise ie
+        except Exception as e:
+            raise e
+
     def filter_image(self):
         """
         This function filters the image so that the effect smoothing is 8x8x8 mm3. This is done to 
@@ -353,6 +389,9 @@ class Converter:
         else:
             raise Exception("ERROR: Something is wrong.\nIf input is not DICOM or ECAT, the program should have errored out before executing this function.")
         
+        # Reset origin to center of the Image
+        self.reset_origin()
+
         # Apply smoothing
         if self.apply_filter:
             self.filter_image()
