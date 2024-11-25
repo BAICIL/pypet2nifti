@@ -20,7 +20,7 @@ from .petsidecar import sidecar_template_custom
 import json
 import importlib.resources as pkg_resources
 import pypet2nifti
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter1d
 
 
 class Converter:
@@ -264,6 +264,56 @@ class Converter:
             subheaders.append(holder)
         
         return header, subheaders
+    
+    @staticmethod
+    def fwhm_to_sigma(fwhm):
+        """
+        Convert Full Width at Half Maximum (FWHM) to standard deviation (sigma).
+
+        Args:
+            fwhm (float): Full Width at Half Maximum value in mm.
+
+        Returns:
+            float: Sigma value.
+        """
+        return fwhm / np.sqrt(8 * np.log(2))
+
+    def reset_origin(self):
+        """
+        This function reset's the origin to the center of the FOV. 
+
+        Raises:
+            fe: FileNotFound Error
+            ie: ImageFileError from nibabel exceptions.
+            e: Other Exceptions
+            ValueError: Error in input values
+        """
+        file_path = pathlib.Path(self.output_folder) / f"{self.output_file}.nii.gz"
+        try:
+            img = nib.load(file_path)
+        except FileNotFoundError as fe:
+            raise fe
+        except nib.filebasedimages.ImageFileError as ie:
+            raise ie
+        except Exception as e:
+            raise e    
+        try:
+            data_shape = img.shape
+            affine = img.affine
+            center_voxel = np.array(data_shape[:3]) / 2
+            center_mm = nib.affines.apply_affine(affine, center_voxel)
+            new_affine = affine.copy
+            new_affine[:3, 3] -= center_mm
+        except Exception as e:
+            raise e
+        try:
+            reori_img = nib.Nifti1Image(img.get_fdata(), new_affine)
+            nib.save(reori_img, file_path)
+        except nib.filebasedimages.ImageFileError as ie:
+            raise ie
+        except Exception as e:
+            raise e
+
     def filter_image(self):
         """
         This function filters the image so that the effect smoothing is 8x8x8 mm3. This is done to 
@@ -286,16 +336,23 @@ class Converter:
         except Exception as e:
             raise e    
         fwhm = np.array(self.filter_size)
-        sigma = fwhm / 2.355
-        voxel_size = np.abs(np.diag(img.affine))[:3]
-        sigma_voxel = sigma / voxel_size
+        voxel_size = img.header.get_zooms()[:3]
+        sigma_x = self.fwhm_to_sigma(fwhm[0]) / voxel_size[0]
+        sigma_y = self.fwhm_to_sigma(fwhm[1]) / voxel_size[1]
+        sigma_z = self.fwhm_to_sigma(fwhm[2]) / voxel_size[2]
+        alpha = 0.02
+        truncate = np.sqrt(-2 * np.log(alpha))
         try:
             if data.ndim == 3:
-                smoothed_data = gaussian_filter(data, sigma=sigma_voxel)
+                smoothed_data = gaussian_filter1d(data, sigma=sigma_x, axis=0, truncate=truncate)
+                smoothed_data = gaussian_filter1d(smoothed_data, sigma=sigma_y, axis=1, truncate=truncate)
+                smoothed_data = gaussian_filter1d(smoothed_data, sigma=sigma_z, axis=2, truncate=truncate)
             elif data.ndim == 4:
                 smoothed_data = np.zeros_like(data)
                 for t in range (data.shape[3]):
-                    smoothed_data[:, :, :, t] = gaussian_filter(data[:, :, :, t], sigma=sigma_voxel)
+                    smoothed_data[..., t] = gaussian_filter1d(data[..., t], sigma=sigma_x, axis=0, truncate=truncate)
+                    smoothed_data[..., t] = gaussian_filter1d(smoothed_data[..., t], sigma=sigma_y, axis=1, truncate=truncate)
+                    smoothed_data[..., t] = gaussian_filter1d(smoothed_data[..., t], sigma=sigma_z, axis=2, truncate=truncate)
             else:
                 raise ValueError("Input NIFTI image must be 3D or 4D.")
         except Exception as e:
@@ -332,6 +389,9 @@ class Converter:
         else:
             raise Exception("ERROR: Something is wrong.\nIf input is not DICOM or ECAT, the program should have errored out before executing this function.")
         
+        # Reset origin to center of the Image
+        self.reset_origin()
+
         # Apply smoothing
         if self.apply_filter:
             self.filter_image()
