@@ -358,7 +358,7 @@ class Converter:
         
         try:
             data_shape = img.shape
-            affine = img.affine
+            affine = img.affine()
             center_voxel = np.array(data_shape[:3]) / 2
             center_mm = nib.affines.apply_affine(affine, center_voxel)
             new_affine = affine.copy
