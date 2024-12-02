@@ -278,6 +278,64 @@ class Converter:
         """
         return fwhm / np.sqrt(8 * np.log(2))
 
+    @staticmethod
+    def check_img_orientation(affine, desired_orientation=("L", "A", "S")):
+        """
+        Check if the given image's orientation matches the desired orientation.
+
+        Parameters:
+        affine (numpy.ndarray): The affine matrix of the input image.
+        desired_orientation (tuple of str, optional): The desired orientation in terms of axis codes. Default is ('L', 'A', 'S').
+
+        Returns:
+        bool: True if the image's orientation matches the desired orientation, False otherwise.
+
+        Raises:
+        ValueError: If the affine is not a valid numpy array.
+        """
+        if not isinstance(affine, np.ndarray):
+            raise ValueError("Affine must be a numpy ndarray.")
+
+        try:
+            img_orientation = nib.aff2axcodes(affine)
+            return img_orientation == desired_orientation
+        except Exception as e:
+            raise RuntimeError(
+                f"An error occurred while checking the image orientation: {e}"
+            )
+
+    @staticmethod
+    def reorient_image(img, desired_orientation=("L", "A", "S")):
+        """
+        Reorient a given image to the desired orientation.
+
+        Parameters:
+        img (nibabel image object): The input image to be reoriented.
+        desired_orientation (tuple of str, optional): The desired orientation in terms of axis codes. Default is ('L', 'A', 'S').
+
+        Returns:
+        tuple: A tuple containing the reoriented image data as a numpy array (dtype float32) and the new affine matrix.
+
+        Raises:
+        ValueError: If the input image is not a valid nibabel image object.
+        """
+        if not isinstance(img, nib.Nifti1Image):
+            raise ValueError("Input image must be a nibabel Nifti1Image object.")
+
+        try:
+            img_orientation = nib.orientations.io_orientation(img.affine)
+            out_orientation = nib.orientations.axcodes2ornt(desired_orientation)
+            transform = nib.orientations.ornt_transform(img_orientation, out_orientation)
+            reoriented_data = nib.orientations.apply_orientation(
+                img.get_fdata(), transform
+            ).astype(np.float32)
+            reoriented_affine = img.affine @ nib.orientations.inv_ornt_aff(
+                transform, img.shape
+            )
+            return reoriented_data, reoriented_affine
+        except Exception as e:
+            raise RuntimeError(f"An error occurred while reorienting the image: {e}")
+
     def reset_origin(self):
         """
         This function reset's the origin to the center of the FOV. 
@@ -296,7 +354,8 @@ class Converter:
         except nib.filebasedimages.ImageFileError as ie:
             raise ie
         except Exception as e:
-            raise e    
+            raise e
+        
         try:
             data_shape = img.shape
             affine = img.affine
@@ -304,10 +363,20 @@ class Converter:
             center_mm = nib.affines.apply_affine(affine, center_voxel)
             new_affine = affine.copy
             new_affine[:3, 3] -= center_mm
+            resetori_img = nib.Nifti1Image(img.get_fdata(), new_affine)
         except Exception as e:
             raise e
+
+        if not self.check_img_orientation(new_affine):
+            try:
+                reori_data, reori_affine = self.reorient_image(resetori_img)
+                reori_img = nib.Nifti1Image(reori_data, reori_affine)
+            except Exception as e:
+                raise e
+        else:
+            reori_img = resetori_img
+        
         try:
-            reori_img = nib.Nifti1Image(img.get_fdata(), new_affine)
             nib.save(reori_img, file_path)
         except nib.filebasedimages.ImageFileError as ie:
             raise ie
