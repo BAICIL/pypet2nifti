@@ -518,9 +518,9 @@ class Converter:
         sidecar_template_custom['StudyDate'] = self.header[0].get('StudyDate', None)
         sidecar_template_custom['AcquisitionTime'] = self.header[0].get('AcquisitionTime', None)
         sidecar_template_custom['Radiopharmaceutical'] = self.tracer
-        sidecar_template_custom['RadionuclidePositronFraction'] = float(self.header[0].RadiopharmaceuticalInformationSequence[0].get('RadionuclidePositronFraction', None))
-        sidecar_template_custom['RadionuclideTotalDose'] = float(self.header[0].RadiopharmaceuticalInformationSequence[0].get('RadionuclideTotalDose', None))
-        sidecar_template_custom['RadionuclideHalfLife'] = float(self.header[0].RadiopharmaceuticalInformationSequence[0].get('RadionuclideHalfLife', None))
+        sidecar_template_custom['RadionuclidePositronFraction'] = float(self.header[0].RadiopharmaceuticalInformationSequence[0].get('RadionuclidePositronFraction', 0))
+        sidecar_template_custom['RadionuclideTotalDose'] = float(self.header[0].RadiopharmaceuticalInformationSequence[0].get('RadionuclideTotalDose', 0))
+        sidecar_template_custom['RadionuclideHalfLife'] = float(self.header[0].RadiopharmaceuticalInformationSequence[0].get('RadionuclideHalfLife', 0))
         sidecar_template_custom['DoseCalibrationFactor'] = float(self.header[0].get('DoseCalibrationFactor', 1))
         sidecar_template_custom['Units'] = self.header[0].get('Units', None)
         sidecar_template_custom['DecayCorrection'] = self.header[0].get('DecayCorrection', None)
@@ -536,10 +536,10 @@ class Converter:
         sidecar_template_custom['FrameTimesStart'] = [(self.header[i].get('FrameReferenceTime', 0)) / 60000 for i in range(0, nfiles, nslices)]
         sidecar_template_custom['FrameDuration'] = [(self.header[i].get('ActualFrameDuration', 0)) / 60000 for i in range(0, nfiles, nslices)]
         sidecar_template_custom['FrameTimesEnd'] = [(self.header[i].get('FrameReferenceTime', 0) + self.header[i].get('ActualFrameDuration', 0)) / 60000 for i in range(0, nfiles, nslices)]
-        sidecar_template_custom['SliceThickness'] = float(self.header[0].get('SliceThickness', None))
+        sidecar_template_custom['SliceThickness'] = float(self.header[0].get('SliceThickness', 0))
         sidecar_template_custom['ImageOrientationPatientDICOM'] = list(self.header[0].get('ImageOrientationPatient', []))
         sidecar_template_custom['ConversionSoftwareVersion'] = 'v1.0.20220505'
-        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.1'
+        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.2.1'
         if self.apply_filter:
             sidecar_template_custom['Smoothed'] = 'yes'
             sidecar_template_custom['FilterSize'] = self.filter_size
@@ -580,7 +580,7 @@ class Converter:
         sidecar_template_custom['SliceThickness'] = (self.subheaders[0].get('z_pixel_size', None)) * 10
         sidecar_template_custom['ImageOrientationPatientDICOM'] = []
         sidecar_template_custom['ConversionSoftwareVersion'] = 'v1.0.20220505'
-        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.1'
+        sidecar_template_custom['PyPET2NIFTIVersion'] = '0.2.1'
         if self.apply_filter:
             sidecar_template_custom['Smoothed'] = 'yes'
             sidecar_template_custom['FilterSize'] = self.filter_size

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 # Full setup configuration
 setup(
     name='pypet2nifti',  
-    version='0.2',  
+    version='0.2.1',  
     license='MIT License',
     description='A tool to convert DICOM and ECAT images to NIfTI format.',  
     author='Dhruman Goradia, PhD', 
